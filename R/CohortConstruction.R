@@ -288,6 +288,10 @@ getInclusionStatistics <- function(connectionDetails = NULL,
   summaryStats <- fetchStats(cohortSummaryStatsTable)
   inclusionStats <- fetchStats(cohortInclusionStatsTable)
   inclusionResults <- fetchStats(cohortInclusionResultTable)
+    print(inclusion)
+    print(summaryStats)
+    print(inclusionStats)
+    print(inclusionResults)
   result <- processInclusionStats(inclusion = inclusion,
                                   inclusionResults = inclusionResults,
                                   inclusionStats = inclusionStats,
