@@ -355,8 +355,9 @@ getInclusionStatisticsFromFiles <- function(cohortId,
     print(inclusion)
     print(summaryStats)
     print(inclusionStats)
-    print(inclusionResults)
     print("---01----")
+    print(inclusionResults)
+    print("---02----")
   result <- processInclusionStats(inclusion = inclusion,
                                   inclusionResults = inclusionResults,
                                   inclusionStats = inclusionStats,
