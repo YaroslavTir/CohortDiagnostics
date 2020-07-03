@@ -73,13 +73,14 @@ runCohortDiagnostics <- function(connectionDetails,
                                  runCohortOverlap = TRUE,
                                  runCohortCharacterization = TRUE,
                                  minCellCount = 5) {
+    print("di-001")
   if (!file.exists(outputFolder))
     dir.create(outputFolder, recursive = TRUE)
   if (!is.null(getOption("fftempdir")) && !file.exists(getOption("fftempdir"))) {
     warning("fftempdir '", getOption("fftempdir"), "' not found. Attempting to create folder")
     dir.create(getOption("fftempdir"), recursive = TRUE)
   }
-  
+    print("di-002")
   ParallelLogger::addDefaultFileLogger(file.path(outputFolder, "cohortDiagnosticsLog.txt"))
   on.exit(ParallelLogger::unregisterLogger("DEFAULT"))
   
@@ -94,7 +95,7 @@ runCohortDiagnostics <- function(connectionDetails,
                    outputFolder = outputFolder)
     DatabaseConnector::disconnect(connection)
   }
-  
+    print("di-003")
   ParallelLogger::logInfo("Running study diagnostics")
   CohortDiagnostics::runCohortDiagnostics(packageName = "exampleStudy",
                                           connectionDetails = connectionDetails,
