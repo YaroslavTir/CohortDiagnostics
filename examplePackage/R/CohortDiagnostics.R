@@ -73,6 +73,7 @@ runCohortDiagnostics <- function(connectionDetails,
                                  runCohortOverlap = TRUE,
                                  runCohortCharacterization = TRUE,
                                  minCellCount = 5) {
+    print("di-2001")
   if (!file.exists(outputFolder))
     dir.create(outputFolder, recursive = TRUE)
   if (!is.null(getOption("fftempdir")) && !file.exists(getOption("fftempdir"))) {
