@@ -381,8 +381,8 @@ processInclusionStats <- function(inclusion,
         print("---2----")
         print(mask)
         print("---3----")
-        typeof(inclusionResults$inclusionRuleMask)
-        typeof(mask)
+        print(typeof(inclusionResults$inclusionRuleMask))
+        print(typeof(mask))
         print("---4----")
       idx <- bitwAnd(inclusionResults$inclusionRuleMask, mask) == mask
       result$remain[result$ruleSequence == ruleId] <- sum(inclusionResults$personCount[idx])
