@@ -387,6 +387,7 @@ processInclusionStats <- function(inclusion,
       mask <- bitwOr(mask, 2^ruleId)
         print(inclusionResults)
         print("---1----")
+        print("---yar----")
         print(inclusionResults$inclusionRuleMask)
         print("---2----")
         print(mask)
