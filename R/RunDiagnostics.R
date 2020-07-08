@@ -82,11 +82,12 @@ runCohortDiagnostics <- function(packageName = NULL,
                                  minCellCount = 5,
                                  incremental = FALSE,
                                  incrementalFolder = exportFolder) {
+    print("00000000000-00001")
   start <- Sys.time()
   if (!file.exists(exportFolder)) {
     dir.create(exportFolder, recursive = TRUE)
   }
-  
+    print("00000000000-00002")
   if (incremental) {
     if (is.null(incrementalFolder)) {
       stop("Must specify incrementalFolder when incremental = TRUE")
@@ -95,17 +96,18 @@ runCohortDiagnostics <- function(packageName = NULL,
       dir.create(incrementalFolder, recursive = TRUE)
     }
   }
-  
+    print("00000000000-00003")
+
   if ((runTimeDistributions || runCohortCharacterization) && !is.null(getOption("fftempdir")) && !file.exists(getOption("fftempdir"))) {
     warning("fftempdir '", getOption("fftempdir"), "' not found. Attempting to create folder")
     dir.create(getOption("fftempdir"), recursive = TRUE)
   }
-  
+    print("00000000000-00004")
   if (is.null(connection)) {
     connection <- DatabaseConnector::connect(connectionDetails)
     on.exit(DatabaseConnector::disconnect(connection))
   }
-  
+    print("00000000000-00005")
   if (is.null(packageName)) {
     cohorts <- loadCohortsFromWebApi(baseUrl = baseUrl,
                                      cohortSetReference = cohortSetReference,
@@ -115,27 +117,28 @@ runCohortDiagnostics <- function(packageName = NULL,
                                       cohortToCreateFile = cohortToCreateFile,
                                       cohortIds = cohortIds)
   }
-  
+    print("00000000000-00006")
   writeToCsv(cohorts, file.path(exportFolder, "cohort.csv"))
   
   if (incremental) {
     cohorts$checksum <- computeChecksum(cohorts$sql)
     recordKeepingFile <- file.path(incrementalFolder, "CreatedDiagnostics.csv")
   }
-  
+    print("00000000000-00007")
   ParallelLogger::logInfo("Saving database metadata")
   database <- data.frame(databaseId = databaseId,
                          databaseName = databaseName,
                          description = databaseDescription,
                          isMetaAnalysis = 0)
   writeToCsv(database, file.path(exportFolder, "database.csv"))
-  
+    print("00000000000-00008")
   # Counting cohorts -----------------------------------------------------------------------
   ParallelLogger::logInfo("Counting cohorts")
   subset <- subsetToRequiredCohorts(cohorts = cohorts, 
                                     task = "getCohortCounts", 
                                     incremental = incremental, 
                                     recordKeepingFile = recordKeepingFile)
+    print("00000000000-00009")
   if (nrow(subset) > 0) {
     counts <- getCohortCounts(connection = connection,
                               cohortDatabaseSchema = cohortDatabaseSchema,
@@ -153,8 +156,8 @@ runCohortDiagnostics <- function(packageName = NULL,
                     recordKeepingFile = recordKeepingFile,
                     incremental = incremental)
   }
-  
-  
+
+    print("00000000000-00010")
   if (runInclusionStatistics) {
     # Inclusion statistics -----------------------------------------------------------------------
     ParallelLogger::logInfo("Fetching inclusion rule statistics")
@@ -163,6 +166,7 @@ runCohortDiagnostics <- function(packageName = NULL,
                                       incremental = incremental, 
                                       recordKeepingFile = recordKeepingFile)
     if (nrow(subset) > 0) {
+        print("00000000000-00011")
       runInclusionStatistics <- function(row) {
         ParallelLogger::logInfo("- Fetching inclusion rule statistics for cohort ", row$cohortName)
         stats <- getInclusionStatisticsFromFiles(cohortId = row$cohortId,
@@ -173,16 +177,20 @@ runCohortDiagnostics <- function(packageName = NULL,
         }
         return(stats)
       }
+        print("00000000000-00012")
       stats <- lapply(split(subset, subset$cohortId), runInclusionStatistics)
       stats <- do.call(rbind, stats)
+        print("00000000000-00013")
       if (nrow(stats) > 0) {
         stats$databaseId <- databaseId
         stats <- enforceMinCellValue(stats, "meetSubjects", minCellCount)
         stats <- enforceMinCellValue(stats, "gainSubjects", minCellCount)
         stats <- enforceMinCellValue(stats, "totalSubjects", minCellCount)
         stats <- enforceMinCellValue(stats, "remainSubjects", minCellCount)
+          print("00000000000-00014")
       }
       writeToCsv(stats, file.path(exportFolder, "inclusion_rule_stats.csv"), incremental = incremental, cohortId = subset$cohortId)
+        print("00000000000-00015")
       recordTasksDone(cohortId = subset$cohortId,
                       task = "runInclusionStatistics",
                       checksum = subset$checksum,
@@ -192,6 +200,7 @@ runCohortDiagnostics <- function(packageName = NULL,
   }
   
   if (runIncludedSourceConcepts || runOrphanConcepts) {
+      print("00000000000-00016")
     # Concept set diagnostics -----------------------------------------------
     runConceptSetDiagnostics(connection = connection,
                              oracleTempSchema = oracleTempSchema,
@@ -211,6 +220,7 @@ runCohortDiagnostics <- function(packageName = NULL,
   }
   
   if (runTimeDistributions) {
+      print("00000000000-00017")
     # Time distributions ----------------------------------------------------------------------
     ParallelLogger::logInfo("Creating time distributions")
     subset <- subsetToRequiredCohorts(cohorts = cohorts, 
@@ -231,11 +241,13 @@ runCohortDiagnostics <- function(packageName = NULL,
         }
         return(data)
       }
+        print("00000000000-00018")
       data <- lapply(split(subset, subset$cohortId), runTimeDist)
       data <- do.call(rbind, data)
       if (nrow(data) > 0) {
         data$databaseId <- databaseId
       }
+        print("00000000000-00019")
       writeToCsv(data, file.path(exportFolder, "time_distribution.csv"), incremental = incremental, cohortId = subset$cohortId)
       recordTasksDone(cohortId = subset$cohortId,
                       task = "runTimeDistributions",
@@ -244,7 +256,8 @@ runCohortDiagnostics <- function(packageName = NULL,
                       incremental = incremental)
     }
   }
-  
+
+    print("00000000000-00020")
   if (runBreakdownIndexEvents) {
     # Index event breakdown ---------------------------------------------------------------------
     ParallelLogger::logInfo("Breaking down index events")
@@ -253,6 +266,7 @@ runCohortDiagnostics <- function(packageName = NULL,
                                       incremental = incremental, 
                                       recordKeepingFile = recordKeepingFile)
     if (nrow(subset) > 0) {
+        print("00000000000-00021")
       runBreakdownIndexEvents <- function(row) {
         ParallelLogger::logInfo("- Breaking down index events for cohort ", row$cohortName)
         data <- breakDownIndexEvents(connection = connection,
@@ -268,12 +282,14 @@ runCohortDiagnostics <- function(packageName = NULL,
         }
         return(data)
       }
+        print("00000000000-00022")
       data <- lapply(split(subset, subset$cohortId), runBreakdownIndexEvents)
       data <- do.call(rbind, data)
       if (nrow(data) > 0) {
         data$databaseId <- databaseId
         data <- enforceMinCellValue(data, "conceptCount", minCellCount)
       }
+        print("00000000000-00023")
       writeToCsv(data, file.path(exportFolder, "index_event_breakdown.csv"), incremental = incremental, cohortId = subset$cohortId)
       recordTasksDone(cohortId = subset$cohortId,
                       task = "runBreakdownIndexEvents",
@@ -282,7 +298,7 @@ runCohortDiagnostics <- function(packageName = NULL,
                       incremental = incremental)
     }
   }
-  
+    print("00000000000-00024")
   if (runIncidenceRate) {
     # Incidence rates --------------------------------------------------------------------------------------
     ParallelLogger::logInfo("Computing incidence rate")
@@ -290,6 +306,7 @@ runCohortDiagnostics <- function(packageName = NULL,
                                       task = "runIncidenceRate", 
                                       incremental = incremental, 
                                       recordKeepingFile = recordKeepingFile)
+      print("00000000000-00025")
     if (nrow(subset) > 0) {
       runIncidenceRate <- function(row) {
         ParallelLogger::logInfo("- Computing incidence rate for cohort ", row$cohortName)
@@ -299,6 +316,7 @@ runCohortDiagnostics <- function(packageName = NULL,
         }, error = function(e) {
           0
         })
+          print("00000000000-00026")
         data <- getIncidenceRate(connection = connection,
                                  cdmDatabaseSchema = cdmDatabaseSchema,
                                  cohortDatabaseSchema = cohortDatabaseSchema,
@@ -311,6 +329,7 @@ runCohortDiagnostics <- function(packageName = NULL,
         }
         return(data)
       }
+        print("00000000000-00027")
       data <- lapply(split(subset, subset$cohortId), runIncidenceRate)
       data <- do.call(rbind, data)
       if (nrow(data) > 0) {
@@ -318,6 +337,7 @@ runCohortDiagnostics <- function(packageName = NULL,
         data <- enforceMinCellValue(data, "cohortCount", minCellCount)
         data <- enforceMinCellValue(data, "incidenceRate", 1000*minCellCount/data$personYears)
       }
+        print("00000000000-00028")
       writeToCsv(data, file.path(exportFolder, "incidence_rate.csv"), incremental = incremental, cohortId = subset$cohortId)
       recordTasksDone(cohortId = subset$cohortId,
                       task = "runIncidenceRate",
@@ -325,13 +345,16 @@ runCohortDiagnostics <- function(packageName = NULL,
                       recordKeepingFile = recordKeepingFile,
                       incremental = incremental)
     }
+      print("00000000000-00029")
   }
   
   if (runCohortOverlap) {
     # Cohort overlap ---------------------------------------------------------------------------------
+      print("00000000000-00030")
     ParallelLogger::logInfo("Computing cohort overlap")
     combis <- expand.grid(targetCohortId = cohorts$cohortId, comparatorCohortId = cohorts$cohortId)
     combis <- combis[combis$targetCohortId < combis$comparatorCohortId, ]
+      print("00000000000-00031")
     if (incremental) {
       combis <- merge(combis, data.frame(targetCohortId = cohorts$cohortId, targetChecksum = cohorts$checksum))
       combis <- merge(combis, data.frame(comparatorCohortId = cohorts$cohortId, comparatorChecksum = cohorts$checksum))
@@ -341,12 +364,15 @@ runCohortDiagnostics <- function(packageName = NULL,
                                      task = "runCohortOverlap", 
                                      incremental = incremental, 
                                      recordKeepingFile = recordKeepingFile)
+      print("00000000000-00032")
     if (nrow(subset) > 0) {
       runCohortOverlap <- function(row) {
+          print("00000000000-00034")
         ParallelLogger::logInfo("- Computing overlap for cohorts ",
                                 row$targetCohortId,
                                 " and ",
                                 row$comparatorCohortId)
+          print("00000000000-00035")
         data <- computeCohortOverlap(connection = connection,
                                      cohortDatabaseSchema = cohortDatabaseSchema,
                                      cohortTable = cohortTable,
@@ -358,7 +384,8 @@ runCohortDiagnostics <- function(packageName = NULL,
         }
         return(data)
       }
-      
+
+        print("00000000000-00036")
       data <- lapply(split(subset, 1:nrow(subset)), runCohortOverlap)
       data <- do.call(rbind, data)
       if (nrow(data) > 0) {
@@ -378,6 +405,7 @@ runCohortDiagnostics <- function(packageName = NULL,
         data <- enforceMinCellValue(data, "sameDaySubjects", minCellCount)
         data <- enforceMinCellValue(data, "tInCSubjects", minCellCount)
         data <- enforceMinCellValue(data, "cInTSubjects", minCellCount)
+          print("00000000000-00037")
       }
       writeToCsv(data = data, 
                  fileName = file.path(exportFolder, "cohort_overlap.csv"), 
@@ -392,7 +420,7 @@ runCohortDiagnostics <- function(packageName = NULL,
                       incremental = incremental)
     }
   }
-  
+    print("00000000000-00038")
   if (runCohortCharacterization) {
     # Cohort characterization ---------------------------------------------------------------
     ParallelLogger::logInfo("Creating cohort characterizations")
@@ -400,6 +428,7 @@ runCohortDiagnostics <- function(packageName = NULL,
                                       task = "runCohortCharacterization", 
                                       incremental = incremental, 
                                       recordKeepingFile = recordKeepingFile)
+      print("00000000000-00039")
     if (nrow(subset) > 0) {
       runCohortCharacterization <- function(row) {
         ParallelLogger::logInfo("- Creating characterization for cohort ", row$cohortName)
@@ -411,6 +440,7 @@ runCohortDiagnostics <- function(packageName = NULL,
         if (nrow(data) > 0) {
           data$cohortId <- row$cohortId
         }
+          print("00000000000-00040")
         return(data)
       }
       data <- lapply(split(subset, subset$cohortId), runCohortCharacterization)
@@ -420,10 +450,11 @@ runCohortDiagnostics <- function(packageName = NULL,
       covariates <- unique(data[, c("covariateId", "covariateName", "analysisId")])
       colnames(covariates)[[3]] <- "covariateAnalysisId"
       writeToCsv(covariates, file.path(exportFolder, "covariate.csv"), incremental = incremental, covariateId = covariates$covariateId)
-      
+        print("00000000000-00041")
       data$covariateName <- NULL
       data$analysisId <- NULL
       if (nrow(data) > 0) {
+          print("00000000000-00042")
         data$databaseId <- databaseId
         data <- merge(data, counts[, c("cohortId", "cohortEntries")])
         data <- enforceMinCellValue(data, "mean", minCellCount/data$cohortEntries)
@@ -440,7 +471,7 @@ runCohortDiagnostics <- function(packageName = NULL,
                       incremental = incremental)
     }
   }
-  
+    print("00000000000-00043")
   # Add all to zip file -------------------------------------------------------------------------------
   ParallelLogger::logInfo("Adding results to zip file")
   zipName <- file.path(exportFolder, paste0("Results_", databaseId, ".zip"))
@@ -449,7 +480,7 @@ runCohortDiagnostics <- function(packageName = NULL,
   on.exit(setwd(oldWd), add = TRUE)
   DatabaseConnector::createZipFile(zipFile = zipName, files = files)
   ParallelLogger::logInfo("Results are ready for sharing at:", zipName)
-  
+    print("00000000000-00044")
   delta <- Sys.time() - start
   ParallelLogger::logInfo(paste("Computing all diagnostics took",
                                 signif(delta, 3),
