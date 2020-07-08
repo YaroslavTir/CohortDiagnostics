@@ -447,9 +447,9 @@ runCohortDiagnostics <- function(packageName = NULL,
       data <- do.call(rbind, data)
       # Drop covariates with mean = 0 after rounding to 3 digits:
         print("00000000001-00040")
-        print(round(data$mean, 3))
-        print(data$mean)
         print(data)
+        print(data$mean)
+        print(round(data$mean, 3))
         print("00000000002-00040")
 
       data <- data[round(data$mean, 3) != 0, ]
