@@ -446,6 +446,12 @@ runCohortDiagnostics <- function(packageName = NULL,
       data <- lapply(split(subset, subset$cohortId), runCohortCharacterization)
       data <- do.call(rbind, data)
       # Drop covariates with mean = 0 after rounding to 3 digits:
+        print("00000000001-00040")
+        print(round(data$mean, 3))
+        print(data$mean)
+        print(data)
+        print("00000000002-00040")
+
       data <- data[round(data$mean, 3) != 0, ]
       covariates <- unique(data[, c("covariateId", "covariateName", "analysisId")])
       colnames(covariates)[[3]] <- "covariateAnalysisId"
